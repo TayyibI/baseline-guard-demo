@@ -1,0 +1,42 @@
+name: Baseline Guard CI
+
+on: [push, pull_request]
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build action (bundle & copy data.json)
+        run: npm run build
+        # Make sure your package.json build script copies web-features data.json into dist/web-features/data.json
+
+      - name: Run Baseline Guard
+        id: baseline
+        uses: ./
+        with:
+          target-baseline: 'widely'   # user chooses widely/newly/year
+          scan-files: 'src/**/*.{js,jsx,ts,tsx,css}'
+          fail-on-newly: 'true'
+          dry-run: 'false'
+          browsers: 'defaults'
+
+      - name: Upload HTML + JSON report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baseline-report
+          path: |
+            reports/baseline/baseline-report.html
+            reports/baseline/baseline-report.json
+
